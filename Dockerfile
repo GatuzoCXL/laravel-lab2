@@ -20,13 +20,21 @@ RUN a2enmod rewrite
 # Instalar Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 
+# Establecer COMPOSER_ALLOW_SUPERUSER para evitar advertencias
+ENV COMPOSER_ALLOW_SUPERUSER=1
+
 # Configurar directorio de trabajo
 WORKDIR /var/www/html
 
-# Crear un nuevo proyecto Laravel si no existe composer.json
-RUN if [ ! -f "composer.json" ]; then \
-    composer create-project --prefer-dist laravel/laravel . ; \
-    fi
+# Crear un nuevo proyecto Laravel
+RUN composer create-project --prefer-dist laravel/laravel:^10.0 .
+
+# Crear un archivo .env básico
+RUN cp .env.example .env && \
+    php artisan key:generate
+
+# Asegurarse de que la configuración de logs es correcta
+RUN sed -i "s/LOG_CHANNEL=stack/LOG_CHANNEL=stderr/g" .env
 
 # Copiar archivos personalizados (si existen)
 COPY . /tmp/app-files/
@@ -35,10 +43,7 @@ RUN if [ -d "/tmp/app-files/" ]; then \
     cp -rf /tmp/app-files/.* . 2>/dev/null || true; \
     fi
 
-# Establecer COMPOSER_ALLOW_SUPERUSER para evitar advertencias
-ENV COMPOSER_ALLOW_SUPERUSER=1
-
-# Instalar dependencias
+# Instalar dependencias nuevamente
 RUN composer install --no-interaction --no-dev --optimize-autoloader
 
 # Configurar permisos
