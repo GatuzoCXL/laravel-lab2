@@ -1,7 +1,7 @@
 services:
   - type: web
     name: laravel-app
-    env: php # Cambiado de 'runtime: php' a 'env: php'
+    # Eliminamos tanto runtime como env para PHP
     buildCommand: |
       curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
       composer install --no-interaction --prefer-dist --optimize-autoloader
