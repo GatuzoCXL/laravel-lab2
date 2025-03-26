@@ -23,8 +23,20 @@ COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
 # Configurar directorio de trabajo
 WORKDIR /var/www/html
 
-# Copiar código de la aplicación
-COPY . .
+# Crear un nuevo proyecto Laravel si no existe composer.json
+RUN if [ ! -f "composer.json" ]; then \
+    composer create-project --prefer-dist laravel/laravel . ; \
+    fi
+
+# Copiar archivos personalizados (si existen)
+COPY . /tmp/app-files/
+RUN if [ -d "/tmp/app-files/" ]; then \
+    cp -rf /tmp/app-files/* . 2>/dev/null || true; \
+    cp -rf /tmp/app-files/.* . 2>/dev/null || true; \
+    fi
+
+# Establecer COMPOSER_ALLOW_SUPERUSER para evitar advertencias
+ENV COMPOSER_ALLOW_SUPERUSER=1
 
 # Instalar dependencias
 RUN composer install --no-interaction --no-dev --optimize-autoloader
